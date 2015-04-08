@@ -1,6 +1,6 @@
 prefix=/usr
 exec_prefix=/usr/bin
-libdir=/usr/lib
+libdir=/usr/lib64
 includedir=/usr/include/GL
 
 Name: glew
