@@ -37,10 +37,10 @@ Viewer::~Viewer() {
     cleanIds();
 }
 
-void Viewer::generateIds() {
+void Viewer::generateIds() { // TODO! ==================================================================================generateIds
     // VAOs
-    glGenBuffers(1,&_vaoQuad);
-    glGenBuffers(1,&_vaoTerrain);
+    glGenVertexArrays(1,&_vaoQuad);
+    glGenVertexArrays(1,&_vaoTerrain);
     // VBOs
     glGenBuffers(1,&_vboQuad);
     glGenBuffers(2,_vboTerrain);
@@ -49,9 +49,10 @@ void Viewer::generateIds() {
     //glGenFramebuffers(4, _frameBuffer); //On genere un id associé au FBO
 
     // Textures
+    //glGenTextures(1,&_texDepth);
 }
 
-void Viewer::cleanIds() {
+void Viewer::cleanIds() { // TODO! ======================================================================================cleanIds
     // VBOs
     glDeleteBuffers(1,&_vboQuad);
     glDeleteBuffers(2,_vboTerrain);
@@ -63,21 +64,54 @@ void Viewer::cleanIds() {
     //glDeleteFramebuffers();
 }
 
-void Viewer::initFBO() {
+/**
+ * @brief Viewer::initFBO
+ * The Frame Buffer Objects are wrappers for textures, instead of drawning on the screen
+ * we could use the FBOs as an output for our drawns. (=Redirect the stdout to a storable frame buffer!)
+ * We will need 4 Passes to get our final mountains on the screen, so we need:
+ * 1 FBO to get the results of the Computation PASS
+ * 1 FBO to store the shadowmap of the Shadow PASS
+ */
+void Viewer::initFBO() { // TODO! ========================================================================================initFBO
+    // Creates the textures
+    //glBindTexture(GL_TEXTURE_2D,); // Sets texture as active
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24 ,_depthResol, _depthResol, 0, GL_DEPTH_COMPONENT, GL_FLOAT,NULL); // ???
 
-    // init your FBOs here
+    // Parametrize the texture
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // Parameters for PCF (shadow blur with OpenGL) -> shadowmap_2D
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+
+    // Links the textures to the FBO
+    //glBindFramebuffer(GL_FRAMEBUFFER,_fbo); // Sets FBO as active
+    //glBindTexture(GL_TEXTURE_2D,_texDepth); // Sets the texture as active
+    //glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,_texDepth,0); // Links
+
+    // test if everything is ok
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "Warning: FBO not complete!" << endl;
 
     // disable FBO
     glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 
-
-void Viewer::initVBO() {
+/**
+ * @brief Viewer::initVBO
+ * Allocates the space for the Vertex Buffer Objects (Quad and Terrain)
+ * Quad is just the geometry maded to display polygonal images on the screen (2 triangles = rectangle)
+ * Terrain is our mountain vertices... We also need to store the faces (index of vertices)
+ */
+void Viewer::initVBO() { // OK!
     const GLfloat quadData[] = {-1.0f,-1.0f,0.0f, 1.0f,-1.0f,0.0f, -1.0f,1.0f,0.0f, -1.0f,1.0f,0.0f, 1.0f,-1.0f,0.0f, 1.0f,1.0f,0.0f }; // Quad vertices
 
     // Creates VBO of Quad VAO
-    glBindVertexArray(_vaoQuad);                            // Sets Quad VAO as active
+    glBindVertexArray(_vaoQuad); // Sets Quad VAO as active                           // Sets Quad VAO as active
 
+    // Sends and enables vertices to the GPU
     glBindBuffer(GL_ARRAY_BUFFER, _vboQuad);                // Sets Quad VBO (vertices) as active
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadData), quadData, GL_STATIC_DRAW); // Links the data to the VBO
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
@@ -86,7 +120,7 @@ void Viewer::initVBO() {
 
 
     // Creates VBOs of Terrain VAO
-    glBindVertexArray(_vaoTerrain);
+    glBindVertexArray(_vaoTerrain); // Sets Terrain VAO as active
 
     // Sends and enables vertices to the GPU
     glBindBuffer(GL_ARRAY_BUFFER, _vboTerrain[0]);          // Sets Terrain VBO (vertices) as active
@@ -102,23 +136,33 @@ void Viewer::initVBO() {
     glBindVertexArray(0);
 }
 
-void Viewer::createShaders() {
-    // *** height field ***
+void Viewer::createShaders() { // OK!
+    // *** PASS 1 *******************
     _vertexFilenames.push_back("shaders/noise.vert");
     _fragmentFilenames.push_back("shaders/noise.frag");
     // ******************************
 
-    // add your shaders here
+    // *** PASS 2 *******************
     _vertexFilenames.push_back("shaders/computation.vert");
     _fragmentFilenames.push_back("shaders/computation.frag");
-    _vertexFilenames.push_back("shaders/render.vert");
-    _fragmentFilenames.push_back("shaders/render.frag");
+    // ******************************
+
+    // *** PASS 3 *******************
     _vertexFilenames.push_back("shaders/shadow.vert");
     _fragmentFilenames.push_back("shaders/shadow.frag");
+    // ******************************
 
+    // *** PASS 4 *******************
+    _vertexFilenames.push_back("shaders/render.vert");
+    _fragmentFilenames.push_back("shaders/render.frag");
+    // ******************************
 }
 
-void Viewer::initShaders() {
+/**
+ * @brief Viewer::initShaders
+ * Will define some names to use for our uniform variables and attributes sended to the shaders...
+ */
+void Viewer::initShaders() { // TODO! ==================================================================================initShaders
     // PASS 1: Noise
     glUseProgram(_shaders[0]->id());
     _noiseVertexLoc = glGetAttribLocation (_shaders[0]->id() ,"position");
@@ -137,7 +181,138 @@ void Viewer::initShaders() {
     glUseProgram(0);
 }
 
-void Viewer::paintGL() {
+/**
+ * @brief Viewer::drawSceneFromCamera
+ * @param id
+ * Draws the mountains from the pov of the camera.
+ * Used on PASS 2 : Computation
+ * We have to send the heighmap (noise map) and some matrices (mvp pov camera),
+ * to the .vert, it must compute the good vertices position with it.
+ * Then, we compute the Depthmap (pov of the camera), the Colormap,
+ * the Normalmap from the .frag (, maybe tangentmap?...)
+ */
+void Viewer::drawSceneFromCamera(GLuint id) { // TODO (I just paste some code from ShadowTP ...) ======================drawSceneFromCamera
+    // mdv matrix from the light point of view
+    const float size = _mesh->radius*10;
+    glm::vec3 l   = glm::transpose(_cam->normalMatrix())*_light;
+    glm::mat4 p   = glm::ortho<float>(-size,size,-size,size,-size,2*size);
+    glm::mat4 v   = glm::lookAt(l, glm::vec3(0,0,0), glm::vec3(0,1,0));
+    glm::mat4 m   = glm::mat4(1.0);
+    glm::mat4 mv  = v*m;
+
+    // send uniform variables
+    glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
+    glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
+    glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
+
+    // send textures
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,_texColor[0]);
+    glUniform1i(glGetUniformLocation(id,"colormap"),0);
+
+    glActiveTexture(GL_TEXTURE0+1);
+    glBindTexture(GL_TEXTURE_2D,_texNormal[0]);
+    glUniform1i(glGetUniformLocation(id,"normalmap"),1);
+
+    // *** TODO: send the shadow map here ***
+    glActiveTexture(GL_TEXTURE0+2);
+    glBindTexture(GL_TEXTURE_2D,_texDepth);
+    glUniform1i(glGetUniformLocation(id,"shadowmap"),2);
+
+    glBindVertexArray(_vaoObject);
+
+    // draw several objects
+    const float r = _mesh->radius*2;
+    const int   n = 2;
+    for(int i=-n;i<=n;++i) {
+
+        // send the modelview matrix (changes for each object)
+        const glm::vec3 pos = glm::vec3(i*r,0,i*r);
+        const glm::mat4 mdv = glm::translate(_cam->mdvMatrix(),pos);
+        glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(mdv[0][0]));
+
+        // send the modelview projection depth matrix
+        const glm::mat4 mvpDepth = p*glm::translate(mv,pos);
+        glUniformMatrix4fv(glGetUniformLocation(id,"mvpDepthMat"),1,GL_FALSE,&mvpDepth[0][0]);
+
+        // draw faces
+        glDrawElements(GL_TRIANGLES,3*_mesh->nb_faces,GL_UNSIGNED_INT,(void *)0);
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,_texColor[1]);
+    glUniform1i(glGetUniformLocation(id,"colormap"),0);
+
+    glActiveTexture(GL_TEXTURE0+1);
+    glBindTexture(GL_TEXTURE_2D,_texNormal[1]);
+    glUniform1i(glGetUniformLocation(id,"normalmap"),1);
+
+    // send initial mdv matrix
+    glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
+
+    // send initial mvp depth matrix
+    const glm::mat4 mvpDepth = p*mv;
+    glUniformMatrix4fv(glGetUniformLocation(id,"mvpDepthMat"),1,GL_FALSE,&mvpDepth[0][0]);
+
+    // draw the floor
+    glBindVertexArray(_vaoFloor);
+    glDrawArrays(GL_TRIANGLES,0,6);
+
+    // disable VAO
+    glBindVertexArray(0);
+}
+/**
+ * @brief Viewer::drawSceneFromLight
+ * @param id
+ * Draws the mountains from the pov of the light.
+ * Used on PASS 3 : Shadows
+ * We have to send the mountains and some matrices (mvp pov light),
+ * to the .vert.
+ * Then, we get the Shadowmap (=Depthmap pov light), there's almost
+ * nothing to do in the shaders... (I guess)
+ */
+void Viewer::drawSceneFromLight(GLuint id) { // TODO (I just paste some code from ShadowTP ...) =======================drawSceneFromLight
+    // mdv matrix from the light point of view
+    const float size = _mesh->radius*10;
+    glm::vec3 l   = glm::transpose(_cam->normalMatrix())*_light;
+    glm::mat4 p   = glm::ortho<float>(-size,size,-size,size,-size,2*size);
+    glm::mat4 v   = glm::lookAt(l, glm::vec3(0,0,0), glm::vec3(0,1,0));
+    glm::mat4 m   = glm::mat4(1.0);
+    glm::mat4 mv  = v*m;
+
+    // *** TODO: draw the scene from the light point of view here ***
+
+    glBindVertexArray(_vaoObject);
+
+    // draw several objects
+    const float r = _mesh->radius*2;
+    const int   n = 2;
+    for(int i=-n;i<=n;++i) {
+
+        // send the modelview matrix (changes for each object)
+        const glm::vec3 pos = glm::vec3(i*r,0,i*r);
+
+        // send the modelview projection depth matrix
+        const glm::mat4 mvpDepth = p*glm::translate(mv,pos);
+        glUniformMatrix4fv(glGetUniformLocation(id,"mvpMat"),1,GL_FALSE,&mvpDepth[0][0]);
+
+        // draw faces
+        glDrawElements(GL_TRIANGLES,3*_mesh->nb_faces,GL_UNSIGNED_INT,(void *)0);
+    }
+
+    // send initial mvp depth matrix
+    const glm::mat4 mvpDepth = p*mv;
+    glUniformMatrix4fv(glGetUniformLocation(id,"mvpMat"),1,GL_FALSE,&mvpDepth[0][0]);
+
+    // draw the floor
+    glBindVertexArray(_vaoFloor);
+    glDrawArrays(GL_TRIANGLES,0,6);
+
+    // disable VAO
+    glBindVertexArray(0);
+}
+
+void Viewer::paintGL() { // TODO P1, P2, P3, P4! ========================================================================= PAINT GL !
 
     // default : compute a 512*512 noise texture
 
