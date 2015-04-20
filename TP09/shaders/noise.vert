@@ -1,7 +1,7 @@
-#version 150
+#version 330
 
 // input attributes 
-in vec3 position; 
+layout(location = 0) in vec3 position; 
 
 void main() {
   // no need for any particular transformation (Identity matrices)

@@ -1,16 +1,15 @@
-#version 150
+#version 330
 
 uniform vec3 motion;
 out vec4 outBuffer;
 
-// a pseudo random function
+// perlin noise ( http://freespace.virgin.net/hugo.elias/models/m_perlin.htm )
 float noiseFunc(float x, float y) {
   int n = int(x * 40.0 + y * 6400.0);
   n = (n << 13) ^ n;
   return 1.0 - float( (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0;
 }
 
-// interpolation function
 float cosInterp(float a, float b, float x) {
   float ft= x*3.1415927;
   float f = (1.0-cos(ft))*0.5;
@@ -18,7 +17,6 @@ float cosInterp(float a, float b, float x) {
   return mix(a,b,f);
 }
 
-// simple averaging 
 float smoothNoise(float x, float y) {
   float corners = noiseFunc(x-1.0,y-1.0)+noiseFunc(x+1.0,y-1.0)+noiseFunc(x-1.0,y+1.0)+noiseFunc(x+1.0,y+1.0);
   float sides   = noiseFunc(x-1.0,y)+noiseFunc(x+1.0,y)+noiseFunc(x,y-1.0)+noiseFunc(x,y+1.0);
@@ -27,7 +25,6 @@ float smoothNoise(float x, float y) {
   return corners/16.0 + sides/8.0 + center/4.0;
 }
 
-// bilinear interpolation between 4 noises
 float interpNoise(float x, float y) {
   float frx = fract(x);
   float fry = fract(y);
@@ -46,13 +43,8 @@ float interpNoise(float x, float y) {
   return cosInterp(i1,i2,fry);
 }
 
-// compute perlin noise 
-float perlinNoise(float xp, float yp,float mx,float my) {
-  const int   n = 10;
-  const float s = 100.0;
-
-  float x = xp/s+mx;
-  float y = yp/s+my;
+float perlinNoise(float x, float y) {
+  const int n = 20;
 
   float total = 0.0;
   float p = 0.5;
@@ -68,8 +60,10 @@ float perlinNoise(float xp, float yp,float mx,float my) {
 }
 
 void main() {
-  float p = perlinNoise(gl_FragCoord.x,gl_FragCoord.y,
-			motion.x,motion.y)+motion.z;
+  const float s = 100.0;
+  float x = gl_FragCoord.x/s+motion.x;
+  float y = gl_FragCoord.y/s+motion.y;
+  float p = perlinNoise(x,y)+motion.z;
 
   outBuffer = vec4(p*0.5+0.5);
 }
