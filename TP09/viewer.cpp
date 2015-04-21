@@ -189,20 +189,23 @@ void Viewer::testShowDisp(GLuint id) {
    glGenerateMipmap(GL_TEXTURE_2D);
    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
-   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
 
   glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
   glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
   glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
   glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
-  glActiveTexture(GL_TEXTURE0);
+
+
   //texture des couleurs en fonction de la hauteur
+  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D,_colorTexId);
   glUniform1i(glGetUniformLocation(id,"colormap"),0);
   //texture heightmap
+  glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D,_texHeight);
-  glUniform1i(glGetUniformLocation(id,"terrain"),0);
+  glUniform1i(glGetUniformLocation(id,"terrain"),1);
 
   glBindVertexArray(_vaoTerrain);
   glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
