@@ -173,18 +173,41 @@ void Viewer::testShowTerrain(GLuint id) {
   glDrawArrays(GL_TRIANGLES,0,6);
   glBindVertexArray(0);
 }
-
+// ce code affiche le displacement mapping effectué
 void Viewer::testShowDisp(GLuint id) {
+    // taken here: http://kay-vriend.blogspot.fr/2012/11/well-preserved-chesterfield.html
+   glEnable(GL_TEXTURE_2D);
+
+   //a color texture ("textures/chesterfield-color.png"), that controls the object color
+   glGenTextures(1,&_colorTexId);
+
+   QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.jpg"));
+
+   glBindTexture(GL_TEXTURE_2D,_colorTexId);
+   glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image0.width(),image0.height(),0,
+              GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image0.bits());
+   glGenerateMipmap(GL_TEXTURE_2D);
+   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+   glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+
   glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
   glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
   glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
   glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
   glActiveTexture(GL_TEXTURE0);
+  //texture des couleurs en fonction de la hauteur
+  glBindTexture(GL_TEXTURE_2D,_colorTexId);
+  glUniform1i(glGetUniformLocation(id,"colormap"),0);
+  //texture heightmap
   glBindTexture(GL_TEXTURE_2D,_texHeight);
   glUniform1i(glGetUniformLocation(id,"terrain"),0);
+
   glBindVertexArray(_vaoTerrain);
   glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
   glBindVertexArray(0);
+  glDeleteTextures(1,&_colorTexId);
 }
 void Viewer::paintGL() {
   // *** generate the height field *** 

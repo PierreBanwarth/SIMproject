@@ -90,6 +90,9 @@ class Viewer : public QGLWidget {
   GLuint _texBuff3;
   GLuint _texDepth;
 
+  //texture ids (mountain color)
+  GLuint _colorTexId;
+
   unsigned int _ndResol;
 };
 
