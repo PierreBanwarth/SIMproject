@@ -141,7 +141,7 @@ void Viewer::updateFBO() {
   glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,_texNormal,0);
 
   // creates the depth map
-  updateTex(_texDepth,GL_LINEAR,GL_CLAMP_TO_EDGE,width(),height(),GL_RGBA32F,GL_RGBA);
+  updateTex(_texDepth,GL_LINEAR,GL_CLAMP_TO_EDGE,width(),height(),GL_DEPTH_COMPONENT24,GL_DEPTH_COMPONENT);
   // attach textures to the FBO dedicated to creating the terrain
   glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
   glBindTexture(GL_TEXTURE_2D,_texDepth);
@@ -167,6 +167,7 @@ void Viewer::createShaders() {
 
   _vertexFilenames.push_back("shaders/displace-terrain.vert");
   _fragmentFilenames.push_back("shaders/displace-terrain.frag");
+
 
 
   // add you shaders for other passes here 

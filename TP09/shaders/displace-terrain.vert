@@ -25,8 +25,8 @@ void main() {
   vec2 bas =    vec2(text.x,text.y - pas);
   vec2 gauche = vec2(text.x - pas,text.y);
   vec2 droite = vec2(text.x + pas ,text.y);
-  gradientgy = (texture(terrain,haut)  - texture(terrain,bas)) * alpha;
-  gradientgx = (texture(terrain,droite)- texture(terrain,gauche)) * alpha;
+  gradientgy = (texture(terrain,haut).x  - texture(terrain,bas).x) * alpha;
+  gradientgx = (texture(terrain,droite).x- texture(terrain,gauche).x) * alpha;
   vec3 v1 = vec3(1,0,gradientgx);
   vec3 v2 = vec3(0,1,gradientgy);
   normal = normalize(cross(v1,v2));
