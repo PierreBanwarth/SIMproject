@@ -41,18 +41,26 @@ Viewer::~Viewer() {
 
 void Viewer::createFBO() {
   // FBOs
-  glGenFramebuffers(1,&_fboTerrain);
+  glGenFramebuffers(1,&_fboTerrain); // 512: Heighmap
+  glGenFramebuffers(1,&_fboViewport); // viewport: colormap, normalmap, depthmap
 
   // Textures 
   glGenTextures(1,&_texHeight);
+  glGenTextures(1,&_texColor);
+  glGenTextures(1,&_texNormal);
+  glGenTextures(1,&_texDepth);
 }
 
 void Viewer::deleteFBO() {
   // FBOs
   glDeleteFramebuffers(1,&_fboTerrain);
+  glDeleteFramebuffers(1,&_fboViewport);
 
   // Textures 
   glDeleteTextures(1,&_texHeight);
+  glDeleteTextures(1,&_texColor);
+  glDeleteTextures(1,&_texNormal);
+  glDeleteTextures(1,&_texDepth);
 }
 
 void Viewer::createVAO() {
@@ -106,6 +114,7 @@ void Viewer::updateTex(GLuint tex,GLenum filter,GLenum wrap,unsigned int w,
 
 void Viewer::updateFBO() {
   
+  // FBO Terrain
   // create the noise texture 
   updateTex(_texHeight,GL_LINEAR,GL_CLAMP_TO_EDGE,_ndResol,_ndResol,GL_RGBA32F,GL_RGBA);
 
@@ -114,6 +123,31 @@ void Viewer::updateFBO() {
   glBindTexture(GL_TEXTURE_2D,_texHeight);
   glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_texHeight,0);
  
+
+
+  // FBO Viewport
+  // create the colormap
+  updateTex(_texColor,GL_LINEAR,GL_CLAMP_TO_EDGE,width(),height(),GL_RGBA32F,GL_RGBA);
+  // attach textures to the FBO dedicated to the computation phase
+  glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
+  glBindTexture(GL_TEXTURE_2D,_texColor);
+  glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,_texColor,0);
+
+  // creates the normal texture
+  updateTex(_texNormal,GL_LINEAR,GL_CLAMP_TO_EDGE,width(),height(),GL_RGBA32F,GL_RGBA);
+  // attach textures to the FBO dedicated to creating the terrain
+  glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
+  glBindTexture(GL_TEXTURE_2D,_texNormal);
+  glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,_texNormal,0);
+
+  // creates the depth map
+  updateTex(_texDepth,GL_LINEAR,GL_CLAMP_TO_EDGE,width(),height(),GL_RGBA32F,GL_RGBA);
+  // attach textures to the FBO dedicated to creating the terrain
+  glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
+  glBindTexture(GL_TEXTURE_2D,_texDepth);
+  glFramebufferTexture2D(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,_texDepth,0);
+
+
   // test if everything is ok
   if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     cout << "Warning: FBO[0] not complete!" << endl;
@@ -244,10 +278,10 @@ void Viewer::paintGL() {
   // *** show the generated height field (to be replaced) *** 
 
  // render in the viewport now
-  glBindFramebuffer(GL_FRAMEBUFFER,0);
+  glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
 
   // restore viewport sizes 
-  glViewport(0,0,width(),height());
+  //glViewport(0,0,width(),height());
 
   // clear buffers
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

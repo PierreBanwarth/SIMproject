@@ -79,16 +79,17 @@ class Viewer : public QGLWidget {
   
   // fbo ids 
   GLuint _fboTerrain;
+  GLuint _fboViewport;
 
   // texture ids (1st fbo)
   GLuint _texHeight;
-  GLuint _texShadow;
 
   // texture ids (2nd fbo)
-  GLuint _texBuff1;
-  GLuint _texBuff2;
-  GLuint _texBuff3;
+  GLuint _texNormal;
+  GLuint _texColor;
   GLuint _texDepth;
+
+  GLuint _texShadow;
 
   //texture ids (mountain color)
   GLuint _colorTexId;
