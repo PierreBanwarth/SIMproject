@@ -56,6 +56,12 @@ class Viewer : public QGLWidget {
   void renderFinalImage(GLuint id);
   void testShowTerrain(GLuint id);
   void testShowDisp(GLuint id);
+
+  void pass1();
+  void pass2();
+  void pass3();
+  void pass4();
+
   QTimer        *_timer;    // timer that controls the animation
   unsigned int   _currentshader; // current shader index
 

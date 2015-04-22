@@ -1,10 +1,13 @@
 #version 330
 
+// input
 uniform sampler2D colormap;
 
 in vec3 eyeView;
 in float outelev;
 in vec3 normal;
+
+// output
 layout(location=0) out vec4 outBuffer;
 layout(location=1) out vec4 outNormal;
 

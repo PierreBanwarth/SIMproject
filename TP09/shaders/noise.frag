@@ -44,7 +44,7 @@ float interpNoise(float x, float y) {
 }
 
 float perlinNoise(float x, float y) {
-  const int n = 20;
+  const int n = 20; // Tester changer
 
   float total = 0.0;
   float p = 0.5;
@@ -60,7 +60,7 @@ float perlinNoise(float x, float y) {
 }
 
 void main() {
-  const float s = 100.0;
+  const float s = 100.0; // Tester changer
   float x = gl_FragCoord.x/s+motion.x;
   float y = gl_FragCoord.y/s+motion.y;
   float p = perlinNoise(x,y)+motion.z;
