@@ -22,7 +22,9 @@ float smoothNoise(float x, float y) {
   float sides   = noiseFunc(x-1.0,y)+noiseFunc(x+1.0,y)+noiseFunc(x,y-1.0)+noiseFunc(x,y+1.0);
   float center  = noiseFunc(x,y);
 
+  //return corners/8.0 + sides/8.0 + center/8.0;
   return corners/16.0 + sides/8.0 + center/4.0;
+  //return corners/32.0 + sides/16.0 + center/8.0;
 }
 
 float interpNoise(float x, float y) {
@@ -65,5 +67,9 @@ void main() {
   float y = gl_FragCoord.y/s+motion.y;
   float p = perlinNoise(x,y)+motion.z;
 
+  // WATER LEVEL!
+  if (p.x > 0.8) {
+	p.x = 0.8;
+  }
   outBuffer = vec4(p*0.5+0.5);
 }

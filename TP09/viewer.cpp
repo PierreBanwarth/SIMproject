@@ -184,6 +184,40 @@ void Viewer::createHeightMap(GLuint id) {
 
 void Viewer::drawSceneFromCamera(GLuint id) {
     // create gbuffers (deferred shading)
+
+    // Load the color texture
+    glGenTextures(1,&_colorTexId);
+    QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.jpg"));
+    glBindTexture(GL_TEXTURE_2D,_colorTexId);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image0.width(),image0.height(),0,
+                 GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image0.bits());
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+
+
+    // Send uniform variables (view matrix)
+    glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
+    glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
+    glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
+
+
+    // Send color texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,_colorTexId);
+    glUniform1i(glGetUniformLocation(id,"colormap"),0);
+
+    // Send noisemap
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D,_texHeight);
+    glUniform1i(glGetUniformLocation(id,"noisemap"),1);
+
+    glBindVertexArray(_vaoTerrain);
+    glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
+    glBindVertexArray(0);
+    glDeleteTextures(1,&_colorTexId);
 }
 
 void Viewer::drawSceneFromLight(GLuint id) {
@@ -211,54 +245,6 @@ void Viewer::renderFinalImage(GLuint id) {
     glBindVertexArray(_vaoQuad);
     glDrawArrays(GL_TRIANGLES,0,6);
     glBindVertexArray(0);
-}
-
-void Viewer::testShowTerrain(GLuint id) {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D,_texHeight);
-    glUniform1i(glGetUniformLocation(id,"terrain"),0);
-    glBindVertexArray(_vaoQuad);
-    glDrawArrays(GL_TRIANGLES,0,6);
-    glBindVertexArray(0);
-}
-// ce code affiche le displacement mapping effectué
-void Viewer::testShowDisp(GLuint id) {
-    // taken here: http://kay-vriend.blogspot.fr/2012/11/well-preserved-chesterfield.html
-    glEnable(GL_TEXTURE_2D);
-
-    //a color texture ("textures/chesterfield-color.png"), that controls the object color
-    glGenTextures(1,&_colorTexId);
-
-    QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.jpg"));
-
-    glBindTexture(GL_TEXTURE_2D,_colorTexId);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image0.width(),image0.height(),0,
-                 GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image0.bits());
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-
-    glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
-    glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
-    glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
-    glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
-
-
-    //texture des couleurs en fonction de la hauteur
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D,_colorTexId);
-    glUniform1i(glGetUniformLocation(id,"colormap"),0);
-    //texture heightmap
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D,_texHeight);
-    glUniform1i(glGetUniformLocation(id,"terrain"),1);
-
-    glBindVertexArray(_vaoTerrain);
-    glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
-    glBindVertexArray(0);
-    glDeleteTextures(1,&_colorTexId);
 }
 
 void Viewer::pass1() {
@@ -291,6 +277,10 @@ void Viewer::pass1() {
 void Viewer::pass2() {
     glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
 
+    // We want to draw into FBO!!!
+    GLenum toPrint[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+    glDrawBuffers(2, toPrint);
+
     // restore viewport sizes
     glViewport(0,0,width(),height());
 
@@ -298,7 +288,7 @@ void Viewer::pass2() {
 
     glUseProgram(_shaders[2]->id());
 
-    testShowDisp(_shaders[2]->id());
+    drawSceneFromCamera(_shaders[2]->id());
 }
 
 void Viewer::pass3() {
@@ -317,7 +307,6 @@ void Viewer::pass4() {
     // activate the buffer shader
     glUseProgram(_shaders[3]->id());
 
-    // test for showing generated terrain
     //testShowDisp(_shaders[2]->id());
     renderFinalImage(_shaders[3]->id());
 }
