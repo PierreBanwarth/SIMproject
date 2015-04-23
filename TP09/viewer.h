@@ -54,8 +54,8 @@ class Viewer : public QGLWidget {
   void drawSceneFromCamera(GLuint id);
   void drawSceneFromLight(GLuint id);
   void renderFinalImage(GLuint id);
-  void testShowTerrain(GLuint id);
-  void testShowDisp(GLuint id);
+  void createExtraTextures();
+  void deleteExtraTextures();
 
   void pass1();
   void pass2();
@@ -99,8 +99,11 @@ class Viewer : public QGLWidget {
 
   //texture ids (mountain color)
   GLuint _colorTexId;
+  GLuint _texWave;
 
   unsigned int _ndResol;
+  GLfloat _animTimer;
+  int _isAnimForward;
 };
 
 #endif // VIEWER_H

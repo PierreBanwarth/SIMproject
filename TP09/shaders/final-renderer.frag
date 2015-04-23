@@ -1,5 +1,7 @@
 #version 330
 
+in float isWater;
+
 out vec4 bufferColor;
 
 // input textures and light direction as uniform variables 
@@ -16,5 +18,12 @@ void main() {
   vec4 n = texelFetch(normalmap, ivec2(gl_FragCoord.xy),0);
   vec4 color = texelFetch(colormap, ivec2(gl_FragCoord.xy),0);
   float diff = max(dot(l,n.xyz),0.0);
+  
+  
   bufferColor = diff*color;
+
+  
+  if (color == vec4(0.0,0.0,0.0,1.0)) { // If is background (black)
+	bufferColor = vec4(0.3,0.3,1.0,0.0); // Sky
+  }
 }

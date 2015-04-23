@@ -12,6 +12,7 @@ uniform mat3 normalMat; // normal matrix (constant for all the vertices)
 out vec3 eyeView;
 out float outelev;
 out vec3 normal;
+out vec3 newPos;
 
 // Parameters
 vec2 texSize = textureSize(noisemap,0);
@@ -19,7 +20,7 @@ float pas = 0.5/texSize.x; // normal accuracy
 float alpha = 500; // normal contrast
 
 void main() {
-  vec3 newPos = position;
+  newPos = position;
 
   vec2 uvcoord = (position*0.5 + 0.5).xy;
   

@@ -69,8 +69,9 @@ void main() {
   float p = perlinNoise(x,y)+motion.z;
 
   // WATER LEVEL!
-  if (p.x > 0.8) {
-	p.x = 0.8;
+  float waterLevel = 0.2;
+  if (p.x > (1-waterLevel)) {
+	p.x = (1-waterLevel);
   }
   outBuffer = vec4(p*0.5+0.5);
 }

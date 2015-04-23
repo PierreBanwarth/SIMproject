@@ -38,6 +38,7 @@ Viewer::~Viewer() {
     // delete all GPU objects
     deleteVAO();
     deleteFBO();
+    deleteExtraTextures();
 }
 
 void Viewer::createFBO() {
@@ -158,6 +159,24 @@ void Viewer::updateFBO() {
     glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 
+void Viewer::createExtraTextures() {
+    // Load the color texture
+    glGenTextures(1,&_colorTexId);
+    QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.png"));
+    glBindTexture(GL_TEXTURE_2D,_colorTexId);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image0.width(),image0.height(),0,
+                 GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image0.bits());
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+}
+
+void Viewer::deleteExtraTextures() {
+    glDeleteTextures(1,&_colorTexId);
+}
+
 void Viewer::createShaders() {
     // *** height field ***
     _vertexFilenames.push_back("shaders/noise.vert");
@@ -186,24 +205,13 @@ void Viewer::createHeightMap(GLuint id) {
 void Viewer::drawSceneFromCamera(GLuint id) {
     // create gbuffers (deferred shading)
 
-    // Load the color texture
-    glGenTextures(1,&_colorTexId);
-    QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.png"));
-    glBindTexture(GL_TEXTURE_2D,_colorTexId);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image0.width(),image0.height(),0,
-                 GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image0.bits());
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-
-
     // Send uniform variables (view matrix)
     glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
     glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
     glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
 
+    // send the animation clock
+    glUniform1f(glGetUniformLocation(id,"animTimer"),(_animTimer));
 
     // Send color texture
     glActiveTexture(GL_TEXTURE0);
@@ -218,7 +226,6 @@ void Viewer::drawSceneFromCamera(GLuint id) {
     glBindVertexArray(_vaoTerrain);
     glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
     glBindVertexArray(0);
-    glDeleteTextures(1,&_colorTexId);
 }
 
 void Viewer::drawSceneFromLight(GLuint id) {
@@ -226,8 +233,14 @@ void Viewer::drawSceneFromLight(GLuint id) {
 }
 
 void Viewer::renderFinalImage(GLuint id) {
+
     // send the light
     glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
+
+    // Send vawe texture
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D,_texWave);
+    glUniform1i(glGetUniformLocation(id,"vaweTexture"),3);
 
     // send the textures
     glActiveTexture(GL_TEXTURE0);
@@ -279,7 +292,7 @@ void Viewer::pass2() {
     glBindFramebuffer(GL_FRAMEBUFFER,_fboViewport);
 
     // We want to draw into FBO!!!
-    GLenum toPrint[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+    GLenum toPrint[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_DEPTH_ATTACHMENT};
     glDrawBuffers(2, toPrint);
 
     // restore viewport sizes
@@ -324,6 +337,20 @@ void Viewer::paintGL() {
 
     //  PASS 4 : Final render VII
     pass4();
+
+    // Timer for animations!
+    if (_isAnimForward) {
+        _animTimer++;
+        if (_animTimer == 60) {
+            _isAnimForward = 0;
+        }
+    } else {
+        _animTimer--;
+        if (_animTimer == 0) {
+            _isAnimForward = 1;
+        }
+    }
+
 
     glUseProgram(0);
 }
@@ -490,7 +517,11 @@ void Viewer::initializeGL() {
     createFBO();
     updateFBO();
 
+    createExtraTextures();
+
     // starts the timer
     _timer->start();
+    _animTimer = 0;
+    _isAnimForward = 1;
 }
 
