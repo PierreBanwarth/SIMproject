@@ -11,8 +11,13 @@ in vec3 normal;
 layout(location=0) out vec4 outColor;
 layout(location=1) out vec4 outNormal;
 
+// Parameters
+float colorTextureStretching = 0.5; // vers 0: diminue étirement texture
+									// vers +inf: augmente étirement texture
+float colorTextureHeight = -0.1; 
+
 void main() {
-  vec2 uvcoord = vec2(1-outelev,0);
+  vec2 uvcoord = vec2((1-outelev)/colorTextureStretching+colorTextureHeight,0);
  
   // Colorer le niveau le plus bas en bleu (eau)
   if (outelev > 0.89) { // Outelev va de ]0 à 0.9[

@@ -14,7 +14,8 @@ Viewer::Viewer(char *,const QGLFormat &format)
       _motion(glm::vec3(0,0,0)),
       _mode(false),
       _showShadowMap(false),
-      _ndResol(512) {
+      //_ndResol(512) {
+      _ndResol(1024) {
 
     setlocale(LC_ALL,"C");
 
@@ -187,7 +188,7 @@ void Viewer::drawSceneFromCamera(GLuint id) {
 
     // Load the color texture
     glGenTextures(1,&_colorTexId);
-    QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.jpg"));
+    QImage image0 = QGLWidget::convertToGLFormat(QImage("texture/texturemontagne.png"));
     glBindTexture(GL_TEXTURE_2D,_colorTexId);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image0.width(),image0.height(),0,
                  GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image0.bits());

@@ -23,8 +23,9 @@ float smoothNoise(float x, float y) {
   float center  = noiseFunc(x,y);
 
   //return corners/8.0 + sides/8.0 + center/8.0;
-  return corners/16.0 + sides/8.0 + center/4.0;
-  //return corners/32.0 + sides/16.0 + center/8.0;
+  //return corners/16.0 + sides/8.0 + center/4.0;
+  return corners/32.0 + sides/16.0 + center/8.0;
+  //return corners/64.0 + sides/32.0 + center/16.0;
 }
 
 float interpNoise(float x, float y) {
