@@ -99,10 +99,12 @@ class Viewer : public QGLWidget {
 
   //texture ids (mountain color)
   GLuint _colorTexId;
+  GLuint _cloudTexId;
   GLuint _texWave;
-
+  GLuint _specularId ;
   unsigned int _ndResol;
   GLfloat _animTimer;
+  int _globaltimer;
   int _isAnimForward;
 };
 

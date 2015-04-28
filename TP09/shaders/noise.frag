@@ -70,8 +70,8 @@ void main() {
 
   // WATER LEVEL!
   float waterLevel = 0.2;
-  if (p.x > (1-waterLevel)) {
-	p.x = (1-waterLevel);
+  if (p > (1-waterLevel)) {
+        p = (1-waterLevel);
   }
   outBuffer = vec4(p*0.5+0.5);
 }

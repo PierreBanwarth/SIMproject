@@ -171,10 +171,35 @@ void Viewer::createExtraTextures() {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+
+    // cloud texture
+    glGenTextures(1,&_cloudTexId);
+    QImage image1 = QGLWidget::convertToGLFormat(QImage("texture/cloudMap.jpg"));
+    glBindTexture(GL_TEXTURE_2D,_cloudTexId);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image1.width(),image1.height(),0,
+                 GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image1.bits());
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+
+    // water specular texture
+    glGenTextures(1,&_specularId);
+    QImage image2 = QGLWidget::convertToGLFormat(QImage("texture/water_specular.jpg"));
+    glBindTexture(GL_TEXTURE_2D,_specularId);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,image2.width(),image2.height(),0,
+                 GL_RGBA,GL_UNSIGNED_BYTE,(const GLvoid *)image2.bits());
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 }
 
 void Viewer::deleteExtraTextures() {
     glDeleteTextures(1,&_colorTexId);
+    glDeleteTextures(1,&_cloudTexId);
 }
 
 void Viewer::createShaders() {
@@ -205,7 +230,9 @@ void Viewer::createHeightMap(GLuint id) {
 void Viewer::drawSceneFromCamera(GLuint id) {
     // create gbuffers (deferred shading)
 
-    // Send uniform variables (view matrix)
+    // Send uniform variables (view matrix)*
+    // send the light
+    glUniform3fv(glGetUniformLocation(id,"light"),1,&(_light[0]));
     glUniformMatrix4fv(glGetUniformLocation(id,"mdvMat"),1,GL_FALSE,&(_cam->mdvMatrix()[0][0]));
     glUniformMatrix4fv(glGetUniformLocation(id,"projMat"),1,GL_FALSE,&(_cam->projMatrix()[0][0]));
     glUniformMatrix3fv(glGetUniformLocation(id,"normalMat"),1,GL_FALSE,&(_cam->normalMatrix()[0][0]));
@@ -217,11 +244,19 @@ void Viewer::drawSceneFromCamera(GLuint id) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,_colorTexId);
     glUniform1i(glGetUniformLocation(id,"colormap"),0);
-
-    // Send noisemap
+    // Send cloud texture
     glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D,_cloudTexId);
+    glUniform1i(glGetUniformLocation(id,"cloud"),1);
+    // Send noisemap
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D,_texHeight);
-    glUniform1i(glGetUniformLocation(id,"noisemap"),1);
+    glUniform1i(glGetUniformLocation(id,"noisemap"),2);
+    // Send specular
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D,_specularId);
+    glUniform1i(glGetUniformLocation(id,"specmap"),3);
+
 
     glBindVertexArray(_vaoTerrain);
     glDrawElements(GL_TRIANGLES,3*_grid->nbFaces(),GL_UNSIGNED_INT,(void *)0);
@@ -254,6 +289,10 @@ void Viewer::renderFinalImage(GLuint id) {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D,_texDepth);
     glUniform1i(glGetUniformLocation(id,"depthmap"),2);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D,_specularId);
+    glUniform1i(glGetUniformLocation(id,"specmap"),3);
 
     // Geometry: rectangle
     glBindVertexArray(_vaoQuad);
@@ -326,9 +365,9 @@ void Viewer::pass4() {
 }
 
 void Viewer::paintGL() {
+    int freq = 1;
     //  PASS 1 : Generate noise
     pass1();
-
     //  PASS 2 : Compute the texture buffers (normals, colors, depth)
     pass2();
 
@@ -339,19 +378,12 @@ void Viewer::paintGL() {
     pass4();
 
     // Timer for animations!
-    if (_isAnimForward) {
+
+    _globaltimer++;
+    if( _globaltimer % freq == 0){
         _animTimer++;
-        if (_animTimer == 60) {
-            _isAnimForward = 0;
-        }
-    } else {
-        _animTimer--;
-        if (_animTimer == 0) {
-            _isAnimForward = 1;
-        }
+
     }
-
-
     glUseProgram(0);
 }
 
@@ -522,6 +554,7 @@ void Viewer::initializeGL() {
     // starts the timer
     _timer->start();
     _animTimer = 0;
+    _globaltimer = 0;
     _isAnimForward = 1;
 }
 

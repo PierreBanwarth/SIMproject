@@ -7,7 +7,7 @@ uniform sampler2D noisemap; // noisemap
 uniform mat4 mdvMat; // modelview matrix (constant for all the vertices)
 uniform mat4 projMat; // projection matrix (constant for all the vertices)
 uniform mat3 normalMat; // normal matrix (constant for all the vertices)
-
+uniform float animTimer;
 // output
 out vec3 eyeView;
 out float outelev;
@@ -18,6 +18,7 @@ out vec3 newPos;
 vec2 texSize = textureSize(noisemap,0);
 float pas = 0.5/texSize.x; // normal accuracy
 float alpha = 500; // normal contrast
+float waterThreshold = 0.1;
 
 void main() {
   newPos = position;
@@ -25,7 +26,11 @@ void main() {
   vec2 uvcoord = (position*0.5 + 0.5).xy;
   
   newPos.z += texture(noisemap,uvcoord).z;
-  
+  float frequence = 100;
+  float hauteur = 150;
+  if(newPos.z >= (1-waterThreshold)){
+      newPos.z += (sin((newPos.x+animTimer)*frequence)-sin((newPos.y+animTimer)*frequence)) / hauteur;
+  }
   vec2 haut =   vec2(uvcoord.x,uvcoord.y + pas);
   vec2 bas =    vec2(uvcoord.x,uvcoord.y - pas);
   vec2 gauche = vec2(uvcoord.x - pas,uvcoord.y);
@@ -35,7 +40,7 @@ void main() {
   vec3 v1 = vec3(1,0,gradientgx);
   vec3 v2 = vec3(0,1,gradientgy);
 
-  outelev = texture(noisemap,uvcoord).z;  
+  outelev = texture(noisemap,uvcoord).z;
   normal = normalize(cross(v1,v2));
   eyeView = normalize((mdvMat*vec4(newPos,1.0)).xyz); // position in view space, normalized (view vector)
   gl_Position = projMat*mdvMat*vec4(newPos,1.0);      // projected position (in screen space)

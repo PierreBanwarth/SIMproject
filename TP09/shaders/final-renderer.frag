@@ -16,10 +16,11 @@ void main() {
   vec3 l = normalize(light);
  
   vec4 n = texelFetch(normalmap, ivec2(gl_FragCoord.xy),0);
+
   vec4 color = texelFetch(colormap, ivec2(gl_FragCoord.xy),0);
   float diff = max(dot(l,n.xyz),0.0);
   
-  
+
   bufferColor = diff*color;
 
   
