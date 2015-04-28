@@ -381,7 +381,7 @@ void Viewer::paintGL() {
 
     _globaltimer++;
     if( _globaltimer % freq == 0){
-        _animTimer++;
+        _animTimer += 0.01;
 
     }
     glUseProgram(0);

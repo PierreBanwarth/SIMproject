@@ -26,7 +26,7 @@ void main() {
   vec2 uvcoord = (position*0.5 + 0.5).xy;
   
   newPos.z += texture(noisemap,uvcoord).z;
-  float frequence = 100;
+  float frequence = 10;
   float hauteur = 150;
   if(newPos.z >= (1-waterThreshold)){
       newPos.z += (sin((newPos.x+animTimer)*frequence)-sin((newPos.y+animTimer)*frequence)) / hauteur;

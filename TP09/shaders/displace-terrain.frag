@@ -39,7 +39,7 @@ void main() {
   // part of toon shading
   // Colorer le niveau le plus bas en bleu (eau)
   if(outelev > (1-waterThreshold)){// Outelev va de ]0 à 0.1
-    outColor = waterColor*diff +spec*texture(specmap,vec2(newPos.x,newPos.y));
+    outColor = waterColor*diff +spec*texture(specmap,vec2(newPos.x,newPos.y))*vec4(0.7,0.7,0.1,1.0);
     //outColor = waterColor + specColor;//texture(cloud,vec2(newPos.x,newPos.y));
   }else {
     outColor = texture(colormap,uvcoord);
